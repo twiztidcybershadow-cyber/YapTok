@@ -1,0 +1,22 @@
+# Runs the YapTok encoder worker. install.sh writes a copy of this file to
+# /opt/yaptok-encoder/docker-compose.yml on the encoder box.
+services:
+  encoder:
+    image: ghcr.io/myfilehero/yaptok-encoder:${TAG:-latest}
+    container_name: yaptok-encoder
+    # The worker's name (unless WORKER_NAME is set). It must stay the same across
+    # restarts and differ between boxes: install.sh puts the server's name here.
+    hostname: encoder
+    restart: unless-stopped
+    env_file: /opt/yaptok-encoder/.env
+    volumes:
+      # On the box's own disk, not inside the container, so a big source has room.
+      - /opt/yaptok-encoder/work:/work
+      - /opt/yaptok-encoder/state:/state
+    # On stop the worker gives its job back to the queue. That needs a moment.
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
